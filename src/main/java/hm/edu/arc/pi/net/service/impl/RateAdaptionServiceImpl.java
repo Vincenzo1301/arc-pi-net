@@ -64,6 +64,15 @@ public class RateAdaptionServiceImpl implements RateAdaptionService {
 
   private double calculateTPrime() {
     double t = calculateT();
+
+    // Handle negative or zero values to prevent invalid random range.
+    // When t is negative, lower (0.5 * t) would be greater than upper (1.5 * t),
+    // which violates the requirement that bound must be greater than origin in
+    // RandomGenerator.nextDouble()
+    if (t <= 0) {
+      return MINIMUM_SENDING_INTERVAL;
+    }
+
     double lower = 0.5 * t;
     double upper = 1.5 * t;
     double randomized = ThreadLocalRandom.current().nextDouble(lower, upper);
