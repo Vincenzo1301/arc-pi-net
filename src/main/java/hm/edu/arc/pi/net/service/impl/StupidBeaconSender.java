@@ -15,8 +15,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class StupidBeaconSender implements BeaconSender {
 
-  private static final ScheduledExecutorService scheduler = newSingleThreadScheduledExecutor();
-
   @Value("${experimental.wifi.broadcast}")
   private String broadcastAddress;
 
@@ -26,6 +24,7 @@ public class StupidBeaconSender implements BeaconSender {
   @Value("${experimental.wifi.sender-port}")
   private int port;
 
+  private ScheduledExecutorService scheduler;
   private DatagramSocket socket;
 
   @Override
@@ -34,18 +33,32 @@ public class StupidBeaconSender implements BeaconSender {
       socket = new DatagramSocket(0, getByName(wifiAddress));
       socket.setBroadcast(true);
 
+      scheduler = newSingleThreadScheduledExecutor();
       scheduler.scheduleAtFixedRate(this::sendMessage, 0, 2, SECONDS);
     } catch (Exception e) {
       System.err.println("Error starting StupidBeaconSender: " + e.getMessage());
     }
   }
 
-  @Override
   public void stopSending() {
+    System.out.println("Stopping beacon sender...");
+
     scheduler.shutdown();
+    try {
+      if (!scheduler.awaitTermination(5, SECONDS)) {
+        System.err.println("Scheduler did not terminate in time. Forcing shutdown...");
+        scheduler.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      System.err.println("Interrupted while waiting for scheduler to terminate.");
+      scheduler.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
+
     if (socket != null && !socket.isClosed()) {
       socket.close();
     }
+
     System.out.println("Stopped sending beacons.");
   }
 
