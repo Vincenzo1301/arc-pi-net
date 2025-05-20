@@ -20,7 +20,7 @@ public class StupidBeaconSender implements BeaconSender {
   @Value("${experimental.wifi.broadcast}")
   private String broadCastAddress;
 
-  @Value("${experimental.wlan.port}")
+  @Value("${experimental.wifi.port}")
   private int port;
 
   private DatagramSocket socket;
