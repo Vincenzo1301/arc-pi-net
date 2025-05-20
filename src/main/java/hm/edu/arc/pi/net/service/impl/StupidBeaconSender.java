@@ -46,6 +46,7 @@ public class StupidBeaconSender implements BeaconSender {
     if (socket != null && !socket.isClosed()) {
       socket.close();
     }
+    System.out.println("Stopped sending beacons.");
   }
 
   private void sendMessage() {
@@ -54,6 +55,7 @@ public class StupidBeaconSender implements BeaconSender {
       var target = getByName(broadcastAddress);
       var packet = new DatagramPacket(data, data.length, target, port);
       socket.send(packet);
+      System.out.println("Sent packet to " + target + ":" + port);
     } catch (Exception e) {
       System.err.println("Error sending packet: " + e.getMessage());
     }
