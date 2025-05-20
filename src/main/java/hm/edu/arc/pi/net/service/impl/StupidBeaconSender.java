@@ -18,7 +18,10 @@ public class StupidBeaconSender implements BeaconSender {
   private static final ScheduledExecutorService scheduler = newSingleThreadScheduledExecutor();
 
   @Value("${experimental.wifi.broadcast}")
-  private String broadCastAddress;
+  private String broadcastAddress;
+
+  @Value("${experimental.wifi.host}")
+  private String wifiAddress;
 
   @Value("${experimental.wifi.sender-port}")
   private int port;
@@ -28,8 +31,9 @@ public class StupidBeaconSender implements BeaconSender {
   @Override
   public void startSending() {
     try {
-      socket = new DatagramSocket(port, getByName(broadCastAddress));
+      socket = new DatagramSocket(0, getByName(wifiAddress));
       socket.setBroadcast(true);
+
       scheduler.scheduleAtFixedRate(this::sendMessage, 0, 2, SECONDS);
     } catch (Exception e) {
       System.err.println("Error starting StupidBeaconSender: " + e.getMessage());
@@ -39,13 +43,16 @@ public class StupidBeaconSender implements BeaconSender {
   @Override
   public void stopSending() {
     scheduler.shutdown();
-    socket.close();
+    if (socket != null && !socket.isClosed()) {
+      socket.close();
+    }
   }
 
   private void sendMessage() {
     try {
-      var data = "Hello from StupidBeaconSender!".getBytes(UTF_8);
-      var packet = new DatagramPacket(data, data.length, getByName(broadCastAddress), port);
+      byte[] data = "Hello from StupidBeaconSender!".getBytes(UTF_8);
+      var target = getByName(broadcastAddress);
+      var packet = new DatagramPacket(data, data.length, target, port);
       socket.send(packet);
     } catch (Exception e) {
       System.err.println("Error sending packet: " + e.getMessage());
