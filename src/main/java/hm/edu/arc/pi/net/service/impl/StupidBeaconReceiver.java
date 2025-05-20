@@ -17,7 +17,7 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   @Value("${experimental.wifi.host}")
   private String wifiAddress;
 
-  @Value("${experimental.wifi.port}")
+  @Value("${experimental.wifi.receive-port}")
   private int port;
 
   private final LogService logService;
