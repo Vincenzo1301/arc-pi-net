@@ -1,35 +1,31 @@
 package hm.edu.arc.pi.net.service.impl;
 
+import static java.net.InetAddress.getByName;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import hm.edu.arc.pi.net.data.Log;
 import hm.edu.arc.pi.net.service.BeaconReceiver;
 import hm.edu.arc.pi.net.service.LogService;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.nio.charset.StandardCharsets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class StupidBeaconReceiver implements BeaconReceiver {
 
-  private static final Logger logger = LoggerFactory.getLogger(StupidBeaconReceiver.class);
-
-  @Value("${experimental.wifi.ip}")
+  @Value("${experimental.wifi.host}")
   private String wifiAddress;
 
   @Value("${experimental.wifi.port}")
   private int port;
 
-  private static final int BUFFER_SIZE = 1024;
-
   private final LogService logService;
+
+  private DatagramSocket socket;
 
   private Thread receiverThread;
   private volatile boolean running = false;
-
-  private DatagramSocket socket;
 
   public StupidBeaconReceiver(LogService logService) {
     this.logService = logService;
@@ -38,47 +34,34 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   @Override
   public void startReceiving() {
     try {
-      socket = new DatagramSocket(port, java.net.InetAddress.getByName(wifiAddress));
       running = true;
-
-      receiverThread =
-          new Thread(
-              () -> {
-                byte[] buffer = new byte[BUFFER_SIZE];
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-
-                while (running) {
-                  try {
-                    socket.receive(packet);
-                    String message =
-                        new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8);
-                    logService.addLog(new Log(message, System.currentTimeMillis()));
-
-                    logger.info("Received message from {}: {}", packet.getAddress(), message);
-                  } catch (Exception e) {
-                    if (running) {
-                      logger.error("Error receiving packet", e);
-                    }
-                  }
-                }
-              });
-
+      receiverThread = new Thread(this::receive);
       receiverThread.start();
-      logger.info("StupidBeaconReceiver started on port {}", port);
     } catch (Exception e) {
-      logger.error("Error starting StupidBeaconReceiver", e);
+      System.err.println("Error starting StupidBeaconReceiver: " + e.getMessage());
     }
   }
 
   @Override
   public void stopReceiving() {
     running = false;
-    if (socket != null) {
-      socket.close();
+    socket.close();
+    receiverThread.interrupt();
+  }
+
+  private void receive() {
+    try (DatagramSocket socket = new DatagramSocket(port, getByName(wifiAddress))) {
+      this.socket = socket;
+
+      while (running) {
+        var buf = new byte[1024];
+        var packet = new DatagramPacket(buf, buf.length);
+        socket.receive(packet);
+        var message = new String(packet.getData(), 0, packet.getLength(), UTF_8);
+        logService.addLog(new Log(message, System.currentTimeMillis()));
+      }
+    } catch (Exception e) {
+      System.err.println("Error in receive(): " + e.getMessage());
     }
-    if (receiverThread != null) {
-      receiverThread.interrupt();
-    }
-    logger.info("StupidBeaconReceiver stopped");
   }
 }

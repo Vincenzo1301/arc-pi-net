@@ -1,13 +1,9 @@
 package hm.edu.arc.pi.net.resource;
 
-import hm.edu.arc.pi.net.data.Log;
 import hm.edu.arc.pi.net.service.BeaconReceiver;
 import hm.edu.arc.pi.net.service.BeaconSender;
-import hm.edu.arc.pi.net.service.LogService;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,17 +12,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/nodes")
 public class NodeController {
 
-  private final LogService logService;
   private final BeaconSender beaconSender;
   private final BeaconReceiver beaconReceiver;
 
   public NodeController(
       @Qualifier("stupidBeaconSender") BeaconSender beaconSender,
-      @Qualifier("stupidBeaconReceiver") BeaconReceiver beaconReceiver,
-      LogService logService) {
+      @Qualifier("stupidBeaconReceiver") BeaconReceiver beaconReceiver) {
     this.beaconSender = beaconSender;
     this.beaconReceiver = beaconReceiver;
-    this.logService = logService;
   }
 
   @PostMapping("/start")
@@ -41,10 +34,5 @@ public class NodeController {
     beaconSender.stopSending();
     beaconReceiver.stopReceiving();
     return ResponseEntity.ok().build();
-  }
-
-  @GetMapping
-  public ResponseEntity<List<Log>> getNodes() {
-    return ResponseEntity.ok(logService.getLogs());
   }
 }
