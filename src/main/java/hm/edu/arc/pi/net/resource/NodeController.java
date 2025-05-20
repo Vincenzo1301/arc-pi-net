@@ -38,8 +38,8 @@ public class NodeController {
 
   @PostMapping("/stop")
   public ResponseEntity<Void> stop() {
-    beaconReceiver.stopReceiving();
     beaconSender.stopSending();
+    beaconReceiver.stopReceiving();
     return ResponseEntity.ok().build();
   }
 

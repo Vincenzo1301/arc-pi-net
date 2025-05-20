@@ -8,21 +8,20 @@ import java.net.DatagramSocket;
 import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-/**
- * StupidBeaconReceiver is a simple implementation of the BeaconReceiver interface that listens for
- * UDP packets on a specified port and logs the received messages.
- *
- * <p>This class is not intended for real experiments of the ARC-DSA algorithm and is primarily to
- * test whether the network stack is working correctly.
- */
 @Service
 public class StupidBeaconReceiver implements BeaconReceiver {
 
   private static final Logger logger = LoggerFactory.getLogger(StupidBeaconReceiver.class);
 
-  private static final int PORT = 12345;
+  @Value("${experimental.wifi.ip}")
+  private String wifiAddress;
+
+  @Value("${experimental.wifi.port}")
+  private int port;
+
   private static final int BUFFER_SIZE = 1024;
 
   private final LogService logService;
@@ -39,7 +38,7 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   @Override
   public void startReceiving() {
     try {
-      socket = new DatagramSocket(PORT);
+      socket = new DatagramSocket(port, java.net.InetAddress.getByName(wifiAddress));
       running = true;
 
       receiverThread =
@@ -65,7 +64,7 @@ public class StupidBeaconReceiver implements BeaconReceiver {
               });
 
       receiverThread.start();
-      logger.info("StupidBeaconReceiver started on port {}", PORT);
+      logger.info("StupidBeaconReceiver started on port {}", port);
     } catch (Exception e) {
       logger.error("Error starting StupidBeaconReceiver", e);
     }
