@@ -15,9 +15,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class StupidBeaconReceiver implements BeaconReceiver {
 
-  @Value("${experimental.wifi.host}")
-  private String wifiAddress;
-
   @Value("${experimental.wifi.receive-port}")
   private int port;
 
@@ -35,9 +32,7 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   @Override
   public void startReceiving() {
     try {
-      System.out.println("Starting beacon receiver with:");
-      System.out.println("Wifi address: " + wifiAddress);
-      System.out.println("Receive port: " + port);
+      System.out.println("Starting beacon receiver with. Listening on port: " + port);
 
       running = true;
       receiverThread = new Thread(this::receive);
@@ -63,9 +58,9 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   }
 
   private void receive() {
-    try (var socket = new DatagramSocket(port, getByName(wifiAddress))) {
-      this.socket = socket;
-      System.out.println("Created receiver socket on port: " + socket.getLocalPort());
+    try {
+      socket = new DatagramSocket(port);
+      System.out.println("Created receiver socket on port: " + socket.getLocalPort() + " bound to " + socket.getLocalAddress());
 
       while (running) {
         var buf = new byte[MAX_VALUE];
@@ -86,6 +81,10 @@ public class StupidBeaconReceiver implements BeaconReceiver {
       if (running) {
         System.err.println("Error in receive(): " + e.getMessage());
         throw new RuntimeException(e);
+      }
+    } finally {
+      if (socket != null && !socket.isClosed()) {
+        socket.close();
       }
     }
   }

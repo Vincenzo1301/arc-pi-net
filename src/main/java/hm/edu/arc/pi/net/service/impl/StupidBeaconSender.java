@@ -18,9 +18,6 @@ public class StupidBeaconSender implements BeaconSender {
   @Value("${experimental.wifi.broadcast}")
   private String broadcastAddress;
 
-  @Value("${experimental.wifi.host}")
-  private String wifiAddress;
-
   @Value("${experimental.wifi.sender-port}")
   private int senderPort;
 
@@ -33,13 +30,13 @@ public class StupidBeaconSender implements BeaconSender {
   @Override
   public void startSending() {
     try {
-      System.out.println("Starting beacon sender with:");
-      System.out.println("Broadcast address: " + broadcastAddress);
-      System.out.println("Wifi address: " + wifiAddress);
-      System.out.println("Sender port: " + senderPort);
-      System.out.println("Receive port: " + receivePort);
+      System.out.println(
+          "Starting beacon sender. Sending to broadcast address: "
+              + broadcastAddress
+              + " on port: "
+              + receivePort);
 
-      socket = new DatagramSocket(senderPort, getByName(wifiAddress));
+      socket = new DatagramSocket(senderPort);
       socket.setBroadcast(true);
       System.out.println("Created socket on port: " + socket.getLocalPort());
 
@@ -47,8 +44,7 @@ public class StupidBeaconSender implements BeaconSender {
       scheduler.scheduleAtFixedRate(this::sendMessage, 0, 2, SECONDS);
       System.out.println("Started sending beacons every 2 seconds");
     } catch (Exception e) {
-      System.err.println("Error starting StupidBeaconSender: " + e.getMessage());
-      throw new RuntimeException(e);
+      throw new RuntimeException("Failed to start beacon sender", e);
     }
   }
 
@@ -80,9 +76,16 @@ public class StupidBeaconSender implements BeaconSender {
       var target = getByName(broadcastAddress);
       var packet = new DatagramPacket(data, data.length, target, receivePort);
       socket.send(packet);
-      System.out.println("Sent packet to " + target + ":" + receivePort);
+      System.out.println(
+          "Sent packet to "
+              + target
+              + ":"
+              + receivePort
+              + " from "
+              + socket.getLocalAddress()
+              + ":"
+              + socket.getLocalPort());
     } catch (Exception e) {
-      System.err.println("Error sending packet: " + e.getMessage());
       throw new RuntimeException("Failed to send beacon", e);
     }
   }
