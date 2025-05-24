@@ -1,9 +1,10 @@
 package hm.edu.arc.pi.net.service.impl;
 
 import static java.lang.Byte.MAX_VALUE;
-import static java.net.InetAddress.getByName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.gson.Gson;
+import hm.edu.arc.pi.net.data.Beacon;
 import hm.edu.arc.pi.net.data.Log;
 import hm.edu.arc.pi.net.service.BeaconReceiver;
 import hm.edu.arc.pi.net.service.LogService;
@@ -58,24 +59,20 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   }
 
   private void receive() {
+    var gson = new Gson();
     try {
       socket = new DatagramSocket(port);
-      System.out.println("Created receiver socket on port: " + socket.getLocalPort() + " bound to " + socket.getLocalAddress());
-
+      System.out.println("Listening for beacons on port: " + port);
       while (running) {
         var buf = new byte[MAX_VALUE];
         var packet = new DatagramPacket(buf, buf.length);
         System.out.println("Waiting for packet...");
         socket.receive(packet);
-        var message = new String(packet.getData(), 0, packet.getLength(), UTF_8);
-        System.out.println(
-            "Received message from "
-                + packet.getAddress()
-                + ":"
-                + packet.getPort()
-                + ": "
-                + message);
-        logService.addLog(new Log(message, System.currentTimeMillis()));
+
+        var json = new String(packet.getData(), 0, packet.getLength(), UTF_8);
+        Beacon beacon = gson.fromJson(json, Beacon.class);
+        System.out.println("Received beacon: " + beacon);
+        logService.addLog(new Log(beacon.toString(), System.currentTimeMillis()));
       }
     } catch (Exception e) {
       if (running) {
