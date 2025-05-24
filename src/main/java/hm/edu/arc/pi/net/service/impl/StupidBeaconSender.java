@@ -64,7 +64,7 @@ public class StupidBeaconSender implements BeaconSender {
 
   private void sendMessage() {
     try {
-      byte[] data = "Hello from StupidBeaconSender!".getBytes(UTF_8);
+      var data = "Hello from StupidBeaconSender!".getBytes(UTF_8);
       var target = getByName(broadcastAddress);
       var packet = new DatagramPacket(data, data.length, target, port);
       socket.send(packet);

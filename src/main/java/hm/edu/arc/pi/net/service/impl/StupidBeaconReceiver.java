@@ -1,5 +1,6 @@
 package hm.edu.arc.pi.net.service.impl;
 
+import static java.lang.Byte.MAX_VALUE;
 import static java.net.InetAddress.getByName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -50,15 +51,16 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   }
 
   private void receive() {
-    try (DatagramSocket socket = new DatagramSocket(port, getByName(wifiAddress))) {
+    try (var socket = new DatagramSocket(port, getByName(wifiAddress))) {
       this.socket = socket;
 
       while (running) {
-        var buf = new byte[1024];
+        var buf = new byte[MAX_VALUE];
         var packet = new DatagramPacket(buf, buf.length);
         socket.receive(packet);
         var message = new String(packet.getData(), 0, packet.getLength(), UTF_8);
         logService.addLog(new Log(message, System.currentTimeMillis()));
+        System.out.println("Received message: " + message);
       }
     } catch (Exception e) {
       System.err.println("Error in receive(): " + e.getMessage());
