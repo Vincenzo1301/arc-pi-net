@@ -35,35 +35,58 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   @Override
   public void startReceiving() {
     try {
+      System.out.println("Starting beacon receiver with:");
+      System.out.println("Wifi address: " + wifiAddress);
+      System.out.println("Receive port: " + port);
+
       running = true;
       receiverThread = new Thread(this::receive);
       receiverThread.start();
+      System.out.println("Started receiver thread");
     } catch (Exception e) {
       System.err.println("Error starting StupidBeaconReceiver: " + e.getMessage());
+      throw new RuntimeException(e);
     }
   }
 
   @Override
   public void stopReceiving() {
+    System.out.println("Stopping beacon receiver...");
     running = false;
-    socket.close();
-    receiverThread.interrupt();
+    if (socket != null && !socket.isClosed()) {
+      socket.close();
+    }
+    if (receiverThread != null) {
+      receiverThread.interrupt();
+    }
+    System.out.println("Stopped receiver");
   }
 
   private void receive() {
     try (var socket = new DatagramSocket(port, getByName(wifiAddress))) {
       this.socket = socket;
+      System.out.println("Created receiver socket on port: " + socket.getLocalPort());
 
       while (running) {
         var buf = new byte[MAX_VALUE];
         var packet = new DatagramPacket(buf, buf.length);
+        System.out.println("Waiting for packet...");
         socket.receive(packet);
         var message = new String(packet.getData(), 0, packet.getLength(), UTF_8);
+        System.out.println(
+            "Received message from "
+                + packet.getAddress()
+                + ":"
+                + packet.getPort()
+                + ": "
+                + message);
         logService.addLog(new Log(message, System.currentTimeMillis()));
-        System.out.println("Received message: " + message);
       }
     } catch (Exception e) {
-      System.err.println("Error in receive(): " + e.getMessage());
+      if (running) {
+        System.err.println("Error in receive(): " + e.getMessage());
+        throw new RuntimeException(e);
+      }
     }
   }
 }

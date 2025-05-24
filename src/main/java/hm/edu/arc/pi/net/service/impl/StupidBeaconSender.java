@@ -22,7 +22,10 @@ public class StupidBeaconSender implements BeaconSender {
   private String wifiAddress;
 
   @Value("${experimental.wifi.sender-port}")
-  private int port;
+  private int senderPort;
+
+  @Value("${experimental.wifi.receive-port}")
+  private int receivePort;
 
   private ScheduledExecutorService scheduler;
   private DatagramSocket socket;
@@ -30,13 +33,22 @@ public class StupidBeaconSender implements BeaconSender {
   @Override
   public void startSending() {
     try {
-      socket = new DatagramSocket(0, getByName(wifiAddress));
+      System.out.println("Starting beacon sender with:");
+      System.out.println("Broadcast address: " + broadcastAddress);
+      System.out.println("Wifi address: " + wifiAddress);
+      System.out.println("Sender port: " + senderPort);
+      System.out.println("Receive port: " + receivePort);
+
+      socket = new DatagramSocket(senderPort, getByName(wifiAddress));
       socket.setBroadcast(true);
+      System.out.println("Created socket on port: " + socket.getLocalPort());
 
       scheduler = newSingleThreadScheduledExecutor();
       scheduler.scheduleAtFixedRate(this::sendMessage, 0, 2, SECONDS);
+      System.out.println("Started sending beacons every 2 seconds");
     } catch (Exception e) {
       System.err.println("Error starting StupidBeaconSender: " + e.getMessage());
+      throw new RuntimeException(e);
     }
   }
 
@@ -66,11 +78,12 @@ public class StupidBeaconSender implements BeaconSender {
     try {
       var data = "Hello from StupidBeaconSender!".getBytes(UTF_8);
       var target = getByName(broadcastAddress);
-      var packet = new DatagramPacket(data, data.length, target, port);
+      var packet = new DatagramPacket(data, data.length, target, receivePort);
       socket.send(packet);
-      System.out.println("Sent packet to " + target + ":" + port);
+      System.out.println("Sent packet to " + target + ":" + receivePort);
     } catch (Exception e) {
       System.err.println("Error sending packet: " + e.getMessage());
+      throw new RuntimeException("Failed to send beacon", e);
     }
   }
 }
