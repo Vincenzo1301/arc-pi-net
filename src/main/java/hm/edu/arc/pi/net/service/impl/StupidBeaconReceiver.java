@@ -19,6 +19,9 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   @Value("${experimental.wifi.receive-port}")
   private int port;
 
+  @Value("${experimental.wifi.host}")
+  private String sourceId;
+
   private final LogService logService;
 
   private DatagramSocket socket;
@@ -34,7 +37,6 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   public void startReceiving() {
     try {
       System.out.println("Starting beacon receiver with. Listening on port: " + port);
-
       running = true;
       receiverThread = new Thread(this::receive);
       receiverThread.start();
@@ -68,11 +70,12 @@ public class StupidBeaconReceiver implements BeaconReceiver {
         var packet = new DatagramPacket(buf, buf.length);
         System.out.println("Waiting for packet...");
         socket.receive(packet);
-
         var json = new String(packet.getData(), 0, packet.getLength(), UTF_8);
         Beacon beacon = gson.fromJson(json, Beacon.class);
-        System.out.println("Received beacon: " + beacon);
-        logService.addLog(new Log(beacon.toString(), System.currentTimeMillis()));
+        if (beacon != null && !beacon.sourceId().equals(sourceId)) {
+          System.out.println("Received beacon: " + beacon);
+          logService.addLog(new Log(beacon.toString(), System.currentTimeMillis()));
+        }
       }
     } catch (Exception e) {
       if (running) {
