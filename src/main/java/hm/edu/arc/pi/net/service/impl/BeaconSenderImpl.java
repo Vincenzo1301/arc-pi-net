@@ -7,7 +7,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.google.gson.Gson;
 import hm.edu.arc.pi.net.data.Beacon;
+import hm.edu.arc.pi.net.data.Log;
 import hm.edu.arc.pi.net.service.BeaconSender;
+import hm.edu.arc.pi.net.service.LogService;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,8 +31,14 @@ public class BeaconSenderImpl implements BeaconSender {
   @Value("${experimental.wifi.host}")
   private String sourceId;
 
+  private final LogService logService;
+
   private ScheduledExecutorService scheduler;
   private DatagramSocket socket;
+
+  public BeaconSenderImpl(LogService logService) {
+    this.logService = logService;
+  }
 
   @Override
   public void startSending() {
@@ -66,11 +74,13 @@ public class BeaconSenderImpl implements BeaconSender {
   private void sendMessage() {
     try {
       var gson = new Gson();
-      var beacon = new Beacon(sourceId, System.currentTimeMillis());
+      var currentTimeMillis = System.currentTimeMillis();
+      var beacon = new Beacon(sourceId, currentTimeMillis);
       var json = gson.toJson(beacon).getBytes(UTF_8);
       var target = getByName(broadcastAddress);
       var packet = new DatagramPacket(json, json.length, target, receivePort);
       socket.send(packet);
+      logService.addLog(new Log(sourceId, currentTimeMillis));
       System.out.println("Sending beacon: " + beacon);
     } catch (Exception e) {
       throw new RuntimeException("Failed to send beacon", e);
