@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-public class StupidBeaconReceiver implements BeaconReceiver {
+public class BeaconReceiverImpl implements BeaconReceiver {
 
   @Value("${experimental.wifi.receive-port}")
   private int port;
@@ -29,7 +29,7 @@ public class StupidBeaconReceiver implements BeaconReceiver {
   private Thread receiverThread;
   private volatile boolean running = false;
 
-  public StupidBeaconReceiver(LogService logService) {
+  public BeaconReceiverImpl(LogService logService) {
     this.logService = logService;
   }
 
