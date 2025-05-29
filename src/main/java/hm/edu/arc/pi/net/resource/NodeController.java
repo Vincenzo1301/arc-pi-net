@@ -16,8 +16,8 @@ public class NodeController {
   private final BeaconReceiver beaconReceiver;
 
   public NodeController(
-      @Qualifier("stupidBeaconSender") BeaconSender beaconSender,
-      @Qualifier("stupidBeaconReceiver") BeaconReceiver beaconReceiver) {
+      @Qualifier("beaconSenderImpl") BeaconSender beaconSender,
+      @Qualifier("beaconReceiverImpl") BeaconReceiver beaconReceiver) {
     this.beaconSender = beaconSender;
     this.beaconReceiver = beaconReceiver;
   }
